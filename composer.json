@@ -1,0 +1,27 @@
+{
+    "name": "puredazzle/wp-image-to-avif",
+    "description": "A WordPress plugin for converting images to AVIF format for optimal performance.",
+    "license": "MIT",
+    "type": "wordpress-muplugin",
+    "keywords": [
+        "wordpress",
+        "plugin",
+        "avif",
+        "image",
+        "performance"
+    ],
+    "authors": [
+        {
+            "name": "Chris Andersson",
+            "homepage": "https://github.com/puredazzle"
+        }
+    ],
+    "require": {
+        "php": "^8.2"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "preferred-install": "dist"
+    }
+}
