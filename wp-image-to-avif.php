@@ -12,7 +12,7 @@
 /**
  * Plugin Name: Image to AVIF
  * Description: Converts uploaded images to AVIF format for optimal performance.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: Chris Andersson
  * Author URI: https://github.com/puredazzle
  * Plugin URI: https://github.com/puredazzle/image-to-avif
@@ -108,6 +108,19 @@ final class ImageToAvif
 
     private function convertToAvif(string $sourcePath, string $destinationPath): bool
     {
+        if (extension_loaded('imagick') && class_exists('Imagick')) {
+            return $this->convertWithImagick($sourcePath, $destinationPath);
+        }
+
+        if (extension_loaded('gd') && function_exists('imageavif')) {
+            return $this->convertWithGd($sourcePath, $destinationPath);
+        }
+
+        return false;
+    }
+
+    private function convertWithImagick(string $sourcePath, string $destinationPath): bool
+    {
         $imagick = new Imagick($sourcePath);
         $imagick->setImageFormat('avif');
         $imagick->setImageCompressionQuality(self::QUALITY);
@@ -115,6 +128,31 @@ final class ImageToAvif
         $imagick->destroy();
 
         return file_exists($destinationPath);
+    }
+
+    private function convertWithGd(string $sourcePath, string $destinationPath): bool
+    {
+        $imageInfo = getimagesize($sourcePath);
+
+        if ($imageInfo === false) {
+            return false;
+        }
+
+        $image = match ($imageInfo['mime']) {
+            'image/jpeg' => imagecreatefromjpeg($sourcePath),
+            'image/png' => imagecreatefrompng($sourcePath),
+            'image/webp' => imagecreatefromwebp($sourcePath),
+            'image/gif' => imagecreatefromgif($sourcePath),
+            default => false,
+        };
+
+        if ($image === false) {
+            return false;
+        }
+
+        $result = imageavif($image, $destinationPath, self::QUALITY);
+
+        return $result && file_exists($destinationPath);
     }
 
     private function toAvifFilename(string $filename): string
