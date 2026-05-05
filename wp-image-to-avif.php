@@ -12,7 +12,7 @@
 /**
  * Plugin Name: Image to AVIF
  * Description: Converts uploaded images to AVIF format for optimal performance.
- * Version: 0.2.0
+ * Version: 0.3.0
  * Author: Chris Andersson
  * Author URI: https://github.com/puredazzle
  * Plugin URI: https://github.com/puredazzle/image-to-avif
@@ -65,22 +65,21 @@ final class ImageToAvif
                 continue;
             }
 
-            $avifFilename = $this->toAvifFilename($data['file']);
+            $avifFilename = $this->to_avif_filename($data['file']);
             $avifPath = $baseDir . '/' . $avifFilename;
 
-            if ($this->convertToAvif($sourcePath, $avifPath)) {
-                unlink($sourcePath);
+            if ($this->convert_to_avif($sourcePath, $avifPath)) {
                 $metadata['sizes'][$size]['file'] = $avifFilename;
                 $metadata['sizes'][$size]['mime-type'] = 'image/avif';
             }
         }
 
-        $metadata = $this->convertOriginal($metadata, $attachmentId, $uploadDir);
+        $metadata = $this->convert_original_image($metadata, $attachmentId, $uploadDir);
 
         return $metadata;
     }
 
-    private function convertOriginal(array $metadata, int $attachmentId, array $uploadDir): array
+    private function convert_original_image(array $metadata, int $attachmentId, array $uploadDir): array
     {
         $originalPath = $uploadDir['basedir'] . '/' . $metadata['file'];
 
@@ -88,11 +87,10 @@ final class ImageToAvif
             return $metadata;
         }
 
-        $avifFilename = $this->toAvifFilename($metadata['file']);
+        $avifFilename = $this->to_avif_filename($metadata['file']);
         $avifPath = $uploadDir['basedir'] . '/' . $avifFilename;
 
-        if ($this->convertToAvif($originalPath, $avifPath)) {
-            unlink($originalPath);
+        if ($this->convert_to_avif($originalPath, $avifPath)) {
             $metadata['file'] = $avifFilename;
 
             wp_update_post([
@@ -106,20 +104,16 @@ final class ImageToAvif
         return $metadata;
     }
 
-    private function convertToAvif(string $sourcePath, string $destinationPath): bool
+    private function convert_to_avif(string $sourcePath, string $destinationPath): bool
     {
         if (extension_loaded('imagick') && class_exists('Imagick')) {
-            return $this->convertWithImagick($sourcePath, $destinationPath);
-        }
-
-        if (extension_loaded('gd') && function_exists('imageavif')) {
-            return $this->convertWithGd($sourcePath, $destinationPath);
+            return $this->convert_with_imagick($sourcePath, $destinationPath);
         }
 
         return false;
     }
 
-    private function convertWithImagick(string $sourcePath, string $destinationPath): bool
+    private function convert_with_imagick(string $sourcePath, string $destinationPath): bool
     {
         $imagick = new Imagick($sourcePath);
         $imagick->setImageFormat('avif');
@@ -130,32 +124,7 @@ final class ImageToAvif
         return file_exists($destinationPath);
     }
 
-    private function convertWithGd(string $sourcePath, string $destinationPath): bool
-    {
-        $imageInfo = getimagesize($sourcePath);
-
-        if ($imageInfo === false) {
-            return false;
-        }
-
-        $image = match ($imageInfo['mime']) {
-            'image/jpeg' => imagecreatefromjpeg($sourcePath),
-            'image/png' => imagecreatefrompng($sourcePath),
-            'image/webp' => imagecreatefromwebp($sourcePath),
-            'image/gif' => imagecreatefromgif($sourcePath),
-            default => false,
-        };
-
-        if ($image === false) {
-            return false;
-        }
-
-        $result = imageavif($image, $destinationPath, self::QUALITY);
-
-        return $result && file_exists($destinationPath);
-    }
-
-    private function toAvifFilename(string $filename): string
+    private function to_avif_filename(string $filename): string
     {
         return preg_replace(self::EXTENSION_PATTERN, '.avif', $filename);
     }
@@ -170,7 +139,11 @@ final class ImageToAvif
             return $image;
         }
 
-        $image[0] = preg_replace(self::EXTENSION_PATTERN, '.avif', $image[0]);
+        $avifUrl = preg_replace(self::EXTENSION_PATTERN, '.avif', $image[0]);
+
+        if ($this->avif_exists($avifUrl)) {
+            $image[0] = $avifUrl;
+        }
 
         return $image;
     }
@@ -183,14 +156,22 @@ final class ImageToAvif
         int $attachmentId,
     ): array {
         foreach ($sources as $width => $source) {
-            $sources[$width]['url'] = preg_replace(
-                self::EXTENSION_PATTERN,
-                '.avif',
-                $source['url'],
-            );
+            $avifUrl = preg_replace(self::EXTENSION_PATTERN, '.avif', $source['url']);
+
+            if ($this->avif_exists($avifUrl)) {
+                $sources[$width]['url'] = $avifUrl;
+            }
         }
 
         return $sources;
+    }
+
+    private function avif_exists(string $url): bool
+    {
+        $uploadDir = wp_upload_dir();
+        $path = str_replace($uploadDir['baseurl'], $uploadDir['basedir'], $url);
+
+        return file_exists($path);
     }
 
     public function add_convert_button(array $fields, WP_Post $post): array
