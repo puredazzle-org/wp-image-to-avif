@@ -12,7 +12,7 @@
 /**
  * Plugin Name: Image to AVIF
  * Description: Converts uploaded images to AVIF format for optimal performance.
- * Version: 0.3.0
+ * Version: 0.4.0
  * Author: Chris Andersson
  * Author URI: https://github.com/puredazzle
  * Plugin URI: https://github.com/puredazzle/image-to-avif
@@ -131,9 +131,9 @@ final class ImageToAvif
 
     public function filter_image_src(
         array|false $image,
-        int $attachmentId,
-        string|int|array $size,
-        bool $icon,
+        ?int $attachmentId,
+        string|int|array|null $size,
+        ?bool $icon,
     ): array|false {
         if (! $image) {
             return $image;
@@ -150,10 +150,10 @@ final class ImageToAvif
 
     public function filter_srcset(
         array $sources,
-        array $sizeArray,
-        string $imageSrc,
-        array $imageMeta,
-        int $attachmentId,
+        ?array $sizeArray,
+        ?string $imageSrc,
+        ?array $imageMeta,
+        ?int $attachmentId,
     ): array {
         foreach ($sources as $width => $source) {
             $avifUrl = preg_replace(self::EXTENSION_PATTERN, '.avif', $source['url']);
