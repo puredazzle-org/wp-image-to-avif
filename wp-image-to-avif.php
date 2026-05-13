@@ -12,7 +12,7 @@
 /**
  * Plugin Name: Image to AVIF
  * Description: Converts uploaded images to AVIF format for optimal performance.
- * Version: 0.4.0
+ * Version: 0.4.1
  * Author: Chris Andersson
  * Author URI: https://github.com/puredazzle
  * Plugin URI: https://github.com/puredazzle/image-to-avif
@@ -28,7 +28,7 @@ if (! defined('ABSPATH')) {
 
 final class ImageToAvif
 {
-    private const QUALITY = 85;
+    private const QUALITY = 90;
     private const MAX_ORIGINAL_SIZE = 10 * 1024 * 1024;
     private const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     private const EXTENSION_PATTERN = '/\.(jpe?g|png|webp|gif)$/i';
